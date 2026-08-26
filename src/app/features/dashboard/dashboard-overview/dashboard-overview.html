@@ -1,0 +1,73 @@
+<div class="min-h-screen bg-slate-900 text-slate-100 p-6">
+  <!-- Header -->
+  <header class="mb-8 border-b border-slate-800 pb-4">
+    <h1 class="text-3xl font-bold tracking-tight text-emerald-400">
+      Addis Ababa City Transport Bureau
+    </h1>
+    <p class="text-slate-400 mt-1">
+      Real-Time Regulatory Compliance & Monitoring System (SEPTMS)
+    </p>
+  </header>
+
+  <!-- Metrics Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-sm">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Vehicles</span>
+      <div class="text-3xl font-extrabold text-white mt-2">{{ metrics().activeVehicles }}</div>
+      <span class="text-xs text-emerald-400 mt-2 inline-block">On Active Routes</span>
+    </div>
+
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-sm">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Trips</span>
+      <div class="text-3xl font-extrabold text-white mt-2">{{ metrics().activeTrips }}</div>
+      <span class="text-xs text-sky-400 mt-2 inline-block">In Transit</span>
+    </div>
+
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-sm">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tariff Violations Today</span>
+      <div class="text-3xl font-extrabold text-rose-500 mt-2">{{ metrics().tariffViolationsCount }}</div>
+      <span class="text-xs text-rose-400 mt-2 inline-block">Flagged for Action</span>
+    </div>
+
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-sm">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Fare Revenue</span>
+      <div class="text-3xl font-extrabold text-emerald-400 mt-2">
+        {{ metrics().totalFareCollectedEtb | currency:'ETB ':'symbol':'1.2-2' }}
+      </div>
+      <span class="text-xs text-slate-400 mt-2 inline-block">Digital Payment Receipts</span>
+    </div>
+  </div>
+
+  <!-- Recent Violations Table -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+    <h2 class="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+      <span class="h-3 w-3 rounded-full bg-rose-500 inline-block"></span>
+      Live Tariff Overcharge Alerts
+    </h2>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs">
+          <tr>
+            <th class="py-3 px-4">Plate Number</th>
+            <th class="py-3 px-4">Driver Name</th>
+            <th class="py-3 px-4">Route</th>
+            <th class="py-3 px-4">Charged Fare</th>
+            <th class="py-3 px-4">Legal Tariff</th>
+            <th class="py-3 px-4">Time</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700">
+          <tr *ngFor="let alert of violations()" class="hover:bg-slate-700/50 transition">
+            <td class="py-3 px-4 font-mono font-medium text-emerald-400">{{ alert.vehiclePlateNumber }}</td>
+            <td class="py-3 px-4 font-medium text-slate-200">{{ alert.driverName }}</td>
+            <td class="py-3 px-4">{{ alert.routeCode }}</td>
+            <td class="py-3 px-4 font-bold text-rose-400">{{ alert.chargedFare | currency:'ETB ' }}</td>
+            <td class="py-3 px-4 text-slate-400">{{ alert.officialTariff | currency:'ETB ' }}</td>
+            <td class="py-3 px-4 text-slate-400">{{ alert.timestamp }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
