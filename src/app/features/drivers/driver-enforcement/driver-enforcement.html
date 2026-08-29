@@ -1,0 +1,284 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Driver Licensing & Law Enforcement
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Penalty Point Tracking, Regulatory Offenses & Status Sanctions (Addis Ababa Transport Bureau)
+      </p>
+    </div>
+  </header>
+
+  <!-- Filter & Search Control Bar -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 mb-6 shadow-lg flex flex-col md:flex-row items-center gap-4">
+    <!-- Search Bar -->
+    <div class="relative flex-1 w-full">
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search by Driver Name, License, Fayda ID, or Vehicle Plate..." 
+        class="w-full bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition placeholder:text-slate-500" />
+    </div>
+
+    <!-- Filter Status -->
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <label class="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
+        ENFORCEMENT STATUS:
+      </label>
+      <select 
+        [ngModel]="selectedStatusFilter()"
+        (ngModelChange)="selectedStatusFilter.set($event)"
+        class="w-full md:w-56 bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let option of statusOptions" [value]="option">{{ option }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Drivers Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">DRIVER NAME & FAYDA ID</th>
+            <th class="py-4 px-6">LICENSE & GRADE</th>
+            <th class="py-4 px-6">ASSIGNED VEHICLE</th>
+            <th class="py-4 px-6">PENALTY POINTS</th>
+            <th class="py-4 px-6">STATUS</th>
+            <th class="py-4 px-6 text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let driver of filteredDrivers()" class="hover:bg-slate-800/40 transition">
+            <!-- Driver Name & Fayda ID -->
+            <td class="py-4 px-6">
+              <div class="font-bold text-slate-100">{{ driver.fullName }}</div>
+              <div class="font-mono text-xs text-slate-500">{{ driver.faydaNationalId }}</div>
+            </td>
+
+            <!-- License & Grade -->
+            <td class="py-4 px-6">
+              <div class="font-mono font-bold text-[#00e699]">{{ driver.licenseNumber }}</div>
+              <div class="text-xs text-slate-400">{{ driver.licenseGrade }}</div>
+            </td>
+
+            <!-- Assigned Vehicle -->
+            <td class="py-4 px-6 font-mono font-semibold text-slate-200">
+              {{ driver.assignedVehiclePlate }}
+            </td>
+
+            <!-- Penalty Points -->
+            <td class="py-4 px-6">
+              <div class="flex items-center gap-2">
+                <span class="text-base font-extrabold"
+                  [ngClass]="{
+                    'text-[#00e699]': driver.accumulatedPoints < 6,
+                    'text-amber-400': driver.accumulatedPoints >= 6 && driver.accumulatedPoints < 12,
+                    'text-rose-500': driver.accumulatedPoints >= 12
+                  }">
+                  {{ driver.accumulatedPoints }} / 12 pts
+                </span>
+              </div>
+              <div class="w-24 bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                <div 
+                  class="h-full transition-all duration-300"
+                  [style.width.%]="(driver.accumulatedPoints / 12) * 100"
+                  [ngClass]="{
+                    'bg-[#00e699]': driver.accumulatedPoints < 6,
+                    'bg-amber-400': driver.accumulatedPoints >= 6 && driver.accumulatedPoints < 12,
+                    'bg-rose-500': driver.accumulatedPoints >= 12
+                  }">
+                </div>
+              </div>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="py-4 px-6">
+              <span class="px-3 py-1 rounded-full text-xs font-bold inline-block"
+                [ngClass]="{
+                  'bg-emerald-950/90 text-[#00e699] border border-emerald-800': driver.status === 'Active',
+                  'bg-amber-950/90 text-amber-400 border border-amber-800': driver.status === 'Warning',
+                  'bg-rose-950/90 text-rose-400 border border-rose-800': driver.status === 'Suspended',
+                  'bg-slate-950 text-slate-500 border border-slate-700': driver.status === 'Revoked'
+                }">
+                {{ driver.status }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-4 px-6 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  (click)="viewDriverDetails(driver)"
+                  class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition">
+                  History
+                </button>
+                <button 
+                  (click)="openSanctionModal(driver)"
+                  class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded-lg text-xs font-bold transition">
+                  + Issue Penalty
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredDrivers().length === 0">
+            <td colspan="6" class="py-8 text-center text-slate-500 text-sm">
+              No registered drivers match your query or status criteria.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Issue Sanction Modal -->
+  <div *ngIf="isSanctionModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h2 class="text-xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+        <span>🚨</span> Issue Bureau Law Enforcement Sanction
+      </h2>
+
+      <form (ngSubmit)="submitSanction()" #sForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Offense Category</label>
+          <select 
+            [(ngModel)]="sanctionForm.offense" 
+            name="offense" 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none">
+            <option *ngFor="let cat of offenseCategories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Penalty Points</label>
+            <input 
+              type="number" 
+              [(ngModel)]="sanctionForm.penaltyPoints" 
+              name="penaltyPoints" 
+              required
+              min="1"
+              max="12"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Fine Amount (ETB)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="sanctionForm.fineAmountEtb" 
+              name="fineAmountEtb" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Violation Location</label>
+          <input 
+            type="text" 
+            [(ngModel)]="sanctionForm.location" 
+            name="location" 
+            required
+            placeholder="e.g. Tor Hailoch Junction"
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Inspector / Officer Notes</label>
+          <textarea 
+            [(ngModel)]="sanctionForm.officerNotes" 
+            name="officerNotes" 
+            required
+            rows="3"
+            placeholder="Document legal offense details, witness statements, or photos..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeSanctionModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-semibold transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!sForm.form.valid"
+            class="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 rounded-lg text-white font-bold text-sm transition">
+            Apply Sanction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Driver History & Details Side Drawer -->
+  <div *ngIf="selectedDriverForDetails()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex justify-end z-50">
+    <div class="bg-[#131b2e] border-l border-slate-800 w-full max-w-md p-6 h-full overflow-y-auto shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <h2 class="text-lg font-bold text-[#00e699]">Driver Record & Offenses</h2>
+          <button (click)="closeDetailsDrawer()" class="text-slate-400 hover:text-slate-100 font-bold text-lg">✕</button>
+        </div>
+
+        <div class="space-y-4 text-sm mb-6">
+          <div>
+            <span class="text-xs text-slate-500 uppercase font-bold">Driver Name</span>
+            <p class="font-bold text-slate-100 text-base">{{ selectedDriverForDetails()?.fullName }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">License Number</span>
+              <p class="font-mono text-[#00e699] font-bold">{{ selectedDriverForDetails()?.licenseNumber }}</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Fayda ID</span>
+              <p class="font-mono text-slate-300 text-xs">{{ selectedDriverForDetails()?.faydaNationalId }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Accumulated Points</span>
+              <p class="font-bold text-rose-400 text-lg">{{ selectedDriverForDetails()?.accumulatedPoints }} / 12</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Total Fines Incurred</span>
+              <p class="font-bold text-emerald-400 text-lg">{{ selectedDriverForDetails()?.totalFinesPaidEtb | currency:'ETB ' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Recorded Offense Log</h3>
+        <div class="space-y-3">
+          <div *ngFor="let violation of selectedDriverForDetails()?.recentViolations" class="bg-[#0b101d] border border-slate-800 p-3 rounded-lg text-xs space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-rose-400">{{ violation.offense }}</span>
+              <span class="text-slate-500 font-mono">{{ violation.date }}</span>
+            </div>
+            <div class="text-slate-300 font-semibold">{{ violation.location }}</div>
+            <p class="text-slate-400 italic">"{{ violation.officerNotes }}"</p>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-800/80 text-[11px]">
+              <span class="text-amber-400 font-bold">+{{ violation.penaltyPoints }} Penalty Points</span>
+              <span class="text-emerald-400 font-bold">{{ violation.fineAmountEtb | currency:'ETB ' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800">
+        <button 
+          (click)="closeDetailsDrawer()"
+          class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-lg text-sm font-bold transition">
+          Close Drawer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
