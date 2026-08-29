@@ -10,5 +10,10 @@ export const routes: Routes = [
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard-overview/dashboard-overview')
       .then(m => m.DashboardOverview)
+  },
+  {
+    path: 'vehicles',
+    loadComponent: () => import('./features/vehicles/vehicle-management/vehicle-management')
+      .then(m => m.VehicleManagement)
   }
 ];

@@ -1,0 +1,283 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Vehicle Fleet Management
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Registry, Compliance & Electric Fleet Control (Addis Ababa Transport Bureau)
+      </p>
+    </div>
+    <button 
+      (click)="openModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2">
+      <span>+ Register Vehicle</span>
+    </button>
+  </header>
+
+  <!-- Filter & Search Panel -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 mb-6 shadow-lg flex flex-col md:flex-row items-center gap-4">
+    <div class="relative flex-1 w-full">
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search by Plate, Driver Name, License, or Route..." 
+        class="w-full bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition placeholder:text-slate-500" />
+    </div>
+
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <label class="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
+        FILTER TYPE:
+      </label>
+      <select 
+        [ngModel]="selectedCategory()"
+        (ngModelChange)="selectedCategory.set($event)"
+        class="w-full md:w-64 bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3 px-4">PLATE NUMBER</th>
+            <th class="py-3 px-4">VEHICLE CATEGORY</th>
+            <th class="py-3 px-4">ENGINE TYPE</th>
+            <th class="py-3 px-4">CAPACITY</th>
+            <th class="py-3 px-4">ASSIGNED DRIVER</th>
+            <th class="py-3 px-4">ASSIGNED ROUTE</th>
+            <th class="py-3 px-4">STATUS</th>
+            <th class="py-3 px-4">COMPLIANCE</th>
+            <th class="py-3 px-4">LAST INSPECTION</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let v of filteredVehicles()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3 px-4 font-mono font-bold text-[#00e699]">{{ v.plateNumber }}</td>
+            <td class="py-3 px-4 font-bold text-slate-100">{{ v.category }}</td>
+
+            <!-- Dynamic Engine Badging -->
+            <td class="py-3 px-4">
+              <span *ngIf="v.engineType === 'Electric (Velocity)'" 
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/80 text-[#00e699] border border-emerald-800">
+                ⚡ Electric (Velocity)
+              </span>
+              <span *ngIf="v.engineType === 'Electric'" 
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-950/80 text-cyan-400 border border-cyan-800">
+                ⚡ Electric Taxi
+              </span>
+              <span *ngIf="v.engineType === 'Diesel/Fuel'" class="text-slate-400 font-medium text-xs">
+                Diesel/Fuel
+              </span>
+            </td>
+
+            <td class="py-3 px-4 font-medium">
+              <div class="text-slate-100 font-bold">
+                {{ v.seatingCapacity + v.standingCapacity }} Seats / Capacity
+              </div>
+              <div class="text-[11px] text-slate-400">
+                <span>{{ v.seatingCapacity }} Seated</span>
+                <span *ngIf="v.standingCapacity > 0" class="text-sky-400 ml-1">
+                  | {{ v.standingCapacity }} Standing
+                </span>
+                <span *ngIf="v.standingCapacity === 0" class="text-slate-500 ml-1">
+                  | No Standing
+                </span>
+              </div>
+            </td>
+
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-100">{{ v.assignedDriverName }}</div>
+              <div class="font-mono text-xs text-slate-500">{{ v.driverLicenseNumber }}</div>
+            </td>
+
+            <!-- New Assigned Route Column -->
+            <td class="py-3 px-4 font-medium text-slate-200">
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-400 text-xs">📍</span>
+                <span>{{ v.assignedRoute }}</span>
+              </div>
+            </td>
+
+            <!-- New Status Column -->
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5"
+                [ngClass]="{
+                  'bg-emerald-950/80 text-emerald-400 border border-emerald-800': v.status === 'In Service',
+                  'bg-slate-800 text-slate-400 border border-slate-700': v.status === 'Out of Service',
+                  'bg-amber-950/80 text-amber-400 border border-amber-800': v.status === 'Maintenance'
+                }">
+                <span class="w-1.5 h-1.5 rounded-full"
+                  [ngClass]="{
+                    'bg-emerald-400': v.status === 'In Service',
+                    'bg-slate-400': v.status === 'Out of Service',
+                    'bg-amber-400': v.status === 'Maintenance'
+                  }"></span>
+                {{ v.status }}
+              </span>
+            </td>
+
+            <td class="py-3 px-4">
+              <span class="px-3 py-1 rounded-full text-xs font-bold inline-block"
+                [ngClass]="{
+                  'bg-emerald-950/90 text-[#00e699] border border-emerald-800': v.compliance === 'Compliant',
+                  'bg-amber-950/90 text-amber-400 border border-amber-800': v.compliance === 'Inspection Due',
+                  'bg-rose-950/90 text-rose-400 border border-rose-800': v.compliance === 'Suspended'
+                }">
+                {{ v.compliance }}
+              </span>
+            </td>
+
+            <td class="py-3 px-4 text-slate-400 text-xs font-mono">{{ v.lastInspection }}</td>
+          </tr>
+
+          <!-- Empty Search State -->
+          <tr *ngIf="filteredVehicles().length === 0">
+            <td colspan="9" class="py-8 text-center text-slate-500 text-sm">
+              No transport vehicles match your search query or selected filter.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Registration Modal -->
+  <div *ngIf="isModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h2 class="text-xl font-bold text-[#00e699] mb-4">Register Bureau Transport Vehicle</h2>
+
+      <form (ngSubmit)="submitVehicleRegistration()" #regForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Vehicle Category</label>
+          <select 
+            [ngModel]="formData.category" 
+            (ngModelChange)="onCategoryChange($event)"
+            name="category" 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none">
+            <option value="Minibus Taxi">Minibus Taxi</option>
+            <option value="Anbessa Bus">Anbessa Bus</option>
+            <option value="Sheger Bus">Sheger Bus</option>
+            <option value="Velocity Bus">Velocity Bus</option>
+            <option value="Midi-Bus">Midi-Bus</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Plate Number</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.plateNumber" 
+              name="plateNumber" 
+              required
+              placeholder="e.g. 3-A99201"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Engine Technology</label>
+            <select 
+              [(ngModel)]="formData.engineType"
+              name="engineType"
+              [disabled]="availableEngines().length === 1"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none disabled:opacity-60">
+              <option *ngFor="let eng of availableEngines()" [value]="eng">{{ eng }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Assigned Route and Operational Status inputs -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Assigned Route</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.assignedRoute" 
+              name="assignedRoute" 
+              required
+              placeholder="e.g. Bole - Megenagna"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Operational Status</label>
+            <select 
+              [(ngModel)]="formData.status"
+              name="status"
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none">
+              <option value="In Service">In Service</option>
+              <option value="Out of Service">Out of Service</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 bg-[#0b101d] p-3 rounded-lg border border-slate-800">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Seating Capacity</label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.seatingCapacity" 
+              name="seatingCapacity" 
+              required
+              class="w-full bg-[#131b2e] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Standing Capacity</label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.standingCapacity" 
+              name="standingCapacity" 
+              [disabled]="formData.category === 'Minibus Taxi'"
+              required
+              class="w-full bg-[#131b2e] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none disabled:opacity-40" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Driver Name</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.assignedDriverName" 
+              name="assignedDriverName" 
+              required
+              placeholder="Driver Full Name"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Driver License</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.driverLicenseNumber" 
+              name="driverLicenseNumber" 
+              required
+              placeholder="ETH-DL-xxxx"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-semibold transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!regForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 rounded-lg text-slate-950 font-bold text-sm transition">
+            Save Vehicle
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
