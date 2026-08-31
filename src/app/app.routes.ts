@@ -20,5 +20,10 @@ export const routes: Routes = [
     path: 'drivers',
     loadComponent: () => import('./features/drivers/driver-enforcement/driver-enforcement')
       .then(m => m.DriverEnforcement)
+  },
+  {
+    path: 'trips',
+    loadComponent: () => import('./features/trips/trip-monitoring/trip-monitoring')
+      .then(m => m.TripMonitoring)
   }
 ];

@@ -1,0 +1,341 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Trip Schedules & Live Monitoring
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Route Dispatches, Real-Time Passenger Occupancy & Fare Stage Controls (Addis Ababa Transport Bureau)
+      </p>
+    </div>
+    <button 
+      (click)="openDispatchModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2">
+      <span>🚀 Dispatch New Trip</span>
+    </button>
+  </header>
+
+  <!-- Control & Filter Bar -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 mb-6 shadow-lg flex flex-col md:flex-row items-center gap-4">
+    <!-- Search Bar -->
+    <div class="relative flex-1 w-full">
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search Route Code, Origin, Destination, Driver, or Plate..." 
+        class="w-full bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition placeholder:text-slate-500" />
+    </div>
+
+    <!-- Filter Category Dropdown -->
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <label class="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
+        CATEGORY:
+      </label>
+      <select 
+        [ngModel]="selectedCategoryFilter()"
+        (ngModelChange)="selectedCategoryFilter.set($event)"
+        class="w-full md:w-48 bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let cat of categoryOptions" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <!-- Filter Status Dropdown -->
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <label class="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
+        STATUS:
+      </label>
+      <select 
+        [ngModel]="selectedStatusFilter()"
+        (ngModelChange)="selectedStatusFilter.set($event)"
+        class="w-full md:w-44 bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Trips Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">TRIP & ROUTE CODE</th>
+            <th class="py-4 px-6">ORIGIN ➔ DESTINATION</th>
+            <th class="py-4 px-6">VEHICLE & DRIVER</th>
+            <th class="py-4 px-6">SCHEDULED TIMES</th>
+            <th class="py-4 px-6">OCCUPANCY</th>
+            <th class="py-4 px-6">STATUS</th>
+            <th class="py-4 px-6 text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let trip of filteredTrips()" class="hover:bg-slate-800/40 transition">
+            <!-- Trip & Route Code -->
+            <td class="py-4 px-6">
+              <div class="font-mono font-extrabold text-[#00e699]">{{ trip.routeCode }}</div>
+              <div class="font-mono text-xs text-slate-500">{{ trip.id }}</div>
+            </td>
+
+            <!-- Origin & Destination -->
+            <td class="py-4 px-6">
+              <div class="font-bold text-slate-100 flex items-center gap-2">
+                <span>{{ trip.origin }}</span>
+                <span class="text-slate-500 text-xs">➔</span>
+                <span>{{ trip.destination }}</span>
+              </div>
+              <div class="text-xs text-slate-400">{{ trip.category }}</div>
+            </td>
+
+            <!-- Vehicle & Driver -->
+            <td class="py-4 px-6">
+              <div class="font-mono font-bold text-slate-200">{{ trip.assignedPlateNumber }}</div>
+              <div class="text-xs text-slate-400">{{ trip.driverName }}</div>
+            </td>
+
+            <!-- Scheduled Times -->
+            <td class="py-4 px-6 text-xs font-mono">
+              <div class="text-slate-200">Dep: {{ trip.scheduledDepartureTime }}</div>
+              <div class="text-slate-400">ETA: {{ trip.estimatedArrivalTime }}</div>
+            </td>
+
+            <!-- Occupancy Progress Bar -->
+            <td class="py-4 px-6">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200">
+                  {{ trip.currentPassengerCount }} / {{ trip.totalCapacity }}
+                </span>
+              </div>
+              <div class="w-28 bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                <div 
+                  class="h-full transition-all duration-300"
+                  [style.width.%]="(trip.currentPassengerCount / trip.totalCapacity) * 100"
+                  [ngClass]="{
+                    'bg-[#00e699]': (trip.currentPassengerCount / trip.totalCapacity) < 0.85,
+                    'bg-amber-400': (trip.currentPassengerCount / trip.totalCapacity) >= 0.85 && (trip.currentPassengerCount / trip.totalCapacity) <= 1,
+                    'bg-rose-500': (trip.currentPassengerCount / trip.totalCapacity) > 1
+                  }">
+                </div>
+              </div>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="py-4 px-6">
+              <span class="px-3 py-1 rounded-full text-xs font-bold inline-block"
+                [ngClass]="{
+                  'bg-emerald-950/90 text-[#00e699] border border-emerald-800': trip.status === 'In Transit',
+                  'bg-sky-950/90 text-sky-400 border border-sky-800': trip.status === 'Scheduled',
+                  'bg-slate-800 text-slate-400 border border-slate-700': trip.status === 'Completed',
+                  'bg-amber-950/90 text-amber-400 border border-amber-800': trip.status === 'Delayed',
+                  'bg-rose-950/90 text-rose-400 border border-rose-800': trip.status === 'Cancelled'
+                }">
+                {{ trip.status }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-4 px-6 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  (click)="viewTripDetails(trip)"
+                  class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition">
+                  Details
+                </button>
+                <button 
+                  *ngIf="trip.status === 'Scheduled'"
+                  (click)="changeStatus(trip.id, 'In Transit')"
+                  class="px-3 py-1.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-[#00e699] rounded-lg text-xs font-bold transition">
+                  Start Trip
+                </button>
+                <button 
+                  *ngIf="trip.status === 'In Transit'"
+                  (click)="changeStatus(trip.id, 'Completed')"
+                  class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition">
+                  Complete
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty Search State -->
+          <tr *ngIf="filteredTrips().length === 0">
+            <td colspan="7" class="py-8 text-center text-slate-500 text-sm">
+              No transport dispatches match your search or filter selection.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Dispatch Modal -->
+  <div *ngIf="isDispatchModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h2 class="text-xl font-bold text-[#00e699] mb-4">Dispatch New Route Trip</h2>
+
+      <form (ngSubmit)="submitDispatch()" #dForm="ngForm" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Route Code</label>
+            <input 
+              type="text" 
+              [(ngModel)]="dispatchForm.routeCode" 
+              name="routeCode" 
+              required
+              placeholder="e.g. R-105"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Category</label>
+            <select 
+              [(ngModel)]="dispatchForm.category" 
+              name="category" 
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none">
+              <option value="Minibus Taxi">Minibus Taxi</option>
+              <option value="Anbessa Bus">Anbessa Bus</option>
+              <option value="Sheger Bus">Sheger Bus</option>
+              <option value="Velocity Bus">Velocity Bus</option>
+              <option value="Midi-Bus">Midi-Bus</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Origin Terminal</label>
+            <input 
+              type="text" 
+              [(ngModel)]="dispatchForm.origin" 
+              name="origin" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Destination</label>
+            <input 
+              type="text" 
+              [(ngModel)]="dispatchForm.destination" 
+              name="destination" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Vehicle Plate</label>
+            <input 
+              type="text" 
+              [(ngModel)]="dispatchForm.assignedPlateNumber" 
+              name="assignedPlateNumber" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Assigned Driver</label>
+            <input 
+              type="text" 
+              [(ngModel)]="dispatchForm.driverName" 
+              name="driverName" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Base Tariff (ETB)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="dispatchForm.baseTariffEtb" 
+              name="baseTariffEtb" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Total Capacity</label>
+            <input 
+              type="number" 
+              [(ngModel)]="dispatchForm.totalCapacity" 
+              name="totalCapacity" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeDispatchModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-semibold transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!dForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 rounded-lg text-slate-950 font-bold text-sm transition">
+            Confirm Dispatch
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trip Details Drawer -->
+  <div *ngIf="selectedTripForDetails()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex justify-end z-50">
+    <div class="bg-[#131b2e] border-l border-slate-800 w-full max-w-md p-6 h-full overflow-y-auto shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <h2 class="text-lg font-bold text-[#00e699]">Trip Route & Tariff Stages</h2>
+          <button (click)="closeDetailsDrawer()" class="text-slate-400 hover:text-slate-100 font-bold text-lg">✕</button>
+        </div>
+
+        <div class="space-y-4 text-sm mb-6">
+          <div class="flex justify-between items-center bg-[#0b101d] p-3 rounded-lg border border-slate-800">
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Route</span>
+              <p class="font-extrabold text-[#00e699] text-base">{{ selectedTripForDetails()?.routeCode }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-500 uppercase font-bold">Status</span>
+              <p class="font-bold text-slate-200">{{ selectedTripForDetails()?.status }}</p>
+            </div>
+          </div>
+
+          <div>
+            <span class="text-xs text-slate-500 uppercase font-bold">Origin & Destination</span>
+            <p class="font-bold text-slate-100">{{ selectedTripForDetails()?.origin }} ➔ {{ selectedTripForDetails()?.destination }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Plate Number</span>
+              <p class="font-mono text-slate-200 font-bold">{{ selectedTripForDetails()?.assignedPlateNumber }}</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold">Driver</span>
+              <p class="text-slate-300 font-medium">{{ selectedTripForDetails()?.driverName }}</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Bureau Regulated Fare Stages</h3>
+        <div class="space-y-2">
+          <div *ngFor="let stage of selectedTripForDetails()?.routeStages" class="flex justify-between items-center bg-[#0b101d] border border-slate-800 p-3 rounded-lg text-xs">
+            <span class="font-bold text-slate-200">{{ stage.stageName }}</span>
+            <span class="font-bold text-[#00e699]">{{ stage.tariffEtb | currency:'ETB ' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800">
+        <button 
+          (click)="closeDetailsDrawer()"
+          class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-lg text-sm font-bold transition">
+          Close Drawer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
