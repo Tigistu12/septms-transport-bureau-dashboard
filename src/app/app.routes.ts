@@ -30,5 +30,10 @@ export const routes: Routes = [
     path: 'tariffs',
     loadComponent: () => import('./features/tariffs/tariff-management/tariff-management')
       .then(m => m.TariffManagement)
+  },
+  {
+    path: 'enforcement',
+    loadComponent: () => import('./features/enforcement/enforcement-management/enforcement-management')
+      .then(m => m.EnforcementManagement)
   }
 ];

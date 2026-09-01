@@ -1,0 +1,275 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Enforcement & Violation Tracking
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Real-Time Penalty Issuance, Tariff Overcharge Control & Driver Demerit Auditing
+      </p>
+    </div>
+    <button 
+      (click)="openIssueModal()"
+      class="mt-4 md:mt-0 bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2">
+      <span>🚨 Issue Violation Ticket</span>
+    </button>
+  </header>
+
+  <!-- Filters & Search Bar -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 mb-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- Search Bar -->
+    <div class="w-full md:w-1/3">
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search by Ticket ID, Plate, Driver Name, or Location..."
+        class="w-full bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none placeholder:text-slate-500" />
+    </div>
+
+    <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+      <!-- Type Filter -->
+      <select 
+        [ngModel]="selectedTypeFilter()"
+        (ngModelChange)="selectedTypeFilter.set($event)"
+        class="w-full md:w-52 bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let type of violationTypes" [value]="type">{{ type }}</option>
+      </select>
+
+      <!-- Status Filter -->
+      <select 
+        [ngModel]="selectedStatusFilter()"
+        (ngModelChange)="selectedStatusFilter.set($event)"
+        class="w-full md:w-44 bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Violation Records Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">TICKET ID</th>
+            <th class="py-4 px-6">VEHICLE & DRIVER</th>
+            <th class="py-4 px-6">VIOLATION TYPE</th>
+            <th class="py-4 px-6">LOCATION & DATE</th>
+            <th class="py-4 px-6">PENALTY (ETB & PTS)</th>
+            <th class="py-4 px-6">STATUS</th>
+            <th class="py-4 px-6 text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let record of filteredViolations()" class="hover:bg-slate-800/40 transition">
+            <td class="py-4 px-6 font-mono font-bold text-rose-400">{{ record.id }}</td>
+            <td class="py-4 px-6">
+              <div class="font-bold text-slate-100">{{ record.plateNumber }}</div>
+              <div class="text-xs text-slate-400">{{ record.driverName }} ({{ record.driverLicenseNumber }})</div>
+            </td>
+            <td class="py-4 px-6">
+              <span class="px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-md">
+                {{ record.violationType }}
+              </span>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-xs font-medium text-slate-200">{{ record.locationName }}</div>
+              <div class="text-[11px] font-mono text-slate-400">{{ record.reportedAt }}</div>
+            </td>
+            <td class="py-4 px-6 font-mono">
+              <div class="text-rose-400 font-bold text-base">{{ record.fineAmountEtb | currency:'ETB ' }}</div>
+              <div class="text-xs text-amber-400 font-semibold">-{{ record.demeritPoints }} Demerit Pts</div>
+            </td>
+            <td class="py-4 px-6">
+              <span [ngClass]="{
+                'bg-rose-950/80 text-rose-400 border-rose-800': record.status === 'Fine Issued',
+                'bg-amber-950/80 text-amber-400 border-amber-800': record.status === 'Under Review',
+                'bg-emerald-950/80 text-[#00e699] border-emerald-800': record.status === 'Resolved',
+                'bg-indigo-950/80 text-indigo-400 border-indigo-800': record.status === 'Appealed'
+              }" class="px-3 py-1 border text-xs font-bold rounded-full">
+                {{ record.status }}
+              </span>
+            </td>
+            <td class="py-4 px-6 text-right space-x-2">
+              <button 
+                (click)="openDetails(record)"
+                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-md font-semibold transition">
+                View
+              </button>
+              <button 
+                *ngIf="record.status !== 'Resolved'"
+                (click)="updateTicketStatus(record.id, 'Resolved')"
+                class="px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700 text-[#00e699] text-xs rounded-md font-semibold transition">
+                Mark Resolved
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredViolations().length === 0">
+            <td colspan="7" class="py-8 text-center text-slate-500 text-sm">
+              No violation tickets match your current filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Issue Violation Ticket Modal -->
+  <div *ngIf="isIssueModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-xl p-6 shadow-2xl">
+      <h2 class="text-xl font-bold text-rose-500 mb-4 flex items-center gap-2">
+        <span>🚨</span> Issue Enforcement Ticket
+      </h2>
+
+      <form (ngSubmit)="submitTicket()" #vForm="ngForm" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Plate Number</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newTicket.plateNumber" 
+              name="plateNumber" 
+              placeholder="e.g. AA-3-12345"
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Driver License No.</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newTicket.driverLicenseNumber" 
+              name="driverLicenseNumber" 
+              placeholder="e.g. ETH-DL-88219"
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Driver Name</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newTicket.driverName" 
+              name="driverName" 
+              placeholder="Full Driver Name"
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Vehicle Category</label>
+            <select 
+              [(ngModel)]="newTicket.category" 
+              name="category" 
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none">
+              <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Violation Type</label>
+            <select 
+              [(ngModel)]="newTicket.violationType" 
+              name="violationType" 
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="Tariff Overcharging">Tariff Overcharging</option>
+              <option value="Route Deviation">Route Deviation</option>
+              <option value="Overcapacity Loading">Overcapacity Loading</option>
+              <option value="Unauthorized Terminal Departure">Unauthorized Terminal Departure</option>
+              <option value="Expired Inspection">Expired Inspection</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Inspection Location</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newTicket.locationName" 
+              name="locationName" 
+              placeholder="e.g. Piazza Terminal"
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Fine Amount (ETB)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newTicket.fineAmountEtb" 
+              name="fineAmountEtb" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Demerit Points</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newTicket.demeritPoints" 
+              name="demeritPoints" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Field Officer Notes</label>
+          <textarea 
+            [(ngModel)]="newTicket.notes" 
+            name="notes" 
+            rows="2"
+            placeholder="Additional evidence or remarks..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-rose-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeIssueModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-semibold transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!vForm.form.valid"
+            class="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 rounded-lg text-white font-bold text-sm transition">
+            Issue Formal Fine
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div *ngIf="selectedViolationForDetail()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-md p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#00e699] mb-4">
+        Ticket Audit Details: {{ selectedViolationForDetail()?.id }}
+      </h3>
+      <div class="space-y-3 text-sm text-slate-300">
+        <div><strong class="text-slate-400">Plate:</strong> {{ selectedViolationForDetail()?.plateNumber }}</div>
+        <div><strong class="text-slate-400">Driver:</strong> {{ selectedViolationForDetail()?.driverName }}</div>
+        <div><strong class="text-slate-400">Violation:</strong> {{ selectedViolationForDetail()?.violationType }}</div>
+        <div><strong class="text-slate-400">Location:</strong> {{ selectedViolationForDetail()?.locationName }}</div>
+        <div><strong class="text-slate-400">Officer Badge:</strong> {{ selectedViolationForDetail()?.officerBadgeNumber }}</div>
+        <div><strong class="text-slate-400">Officer Remarks:</strong> {{ selectedViolationForDetail()?.notes || 'None' }}</div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button 
+          (click)="closeDetails()"
+          class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 text-sm font-semibold">
+          Close Audit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
