@@ -1,0 +1,218 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Tariff & Fare Rate Regulation
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Distance-Based Fares, Route Stage Pricing & Fuel Indexing Adjustments (Addis Ababa Transport Bureau)
+      </p>
+    </div>
+    <button 
+      (click)="openAdjustmentModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2">
+      <span>⚖️ Apply Tariff Adjustment</span>
+    </button>
+  </header>
+
+  <!-- Control Panel Bar -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 mb-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- View Switcher Tabs -->
+    <div class="flex items-center bg-[#0b101d] p-1 rounded-lg border border-slate-800 w-full md:w-auto">
+      <button 
+        (click)="activeTab.set('distance')"
+        [ngClass]="activeTab() === 'distance' ? 'bg-[#00e699] text-slate-950 font-extrabold' : 'text-slate-400 hover:text-slate-200'"
+        class="px-5 py-2 text-xs rounded-md transition font-semibold w-1/2 md:w-auto text-center">
+        Distance Band Tariffs
+      </button>
+      <button 
+        (click)="activeTab.set('stage')"
+        [ngClass]="activeTab() === 'stage' ? 'bg-[#00e699] text-slate-950 font-extrabold' : 'text-slate-400 hover:text-slate-200'"
+        class="px-5 py-2 text-xs rounded-md transition font-semibold w-1/2 md:w-auto text-center">
+        Approved Route Stage Tariffs
+      </button>
+    </div>
+
+    <!-- Filter Category Dropdown -->
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <label class="text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
+        CATEGORY:
+      </label>
+      <select 
+        [ngModel]="selectedCategory()"
+        (ngModelChange)="selectedCategory.set($event)"
+        class="w-full md:w-60 bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none transition cursor-pointer">
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Distance Band Tariffs Table -->
+  <div *ngIf="activeTab() === 'distance'" class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">TRANSPORT CATEGORY</th>
+            <th class="py-4 px-6">DISTANCE RANGE</th>
+            <th class="py-4 px-6">BASE FARE (ETB)</th>
+            <th class="py-4 px-6">RATE PER KM (ETB)</th>
+            <th class="py-4 px-6">EFFECTIVE DATE</th>
+            <th class="py-4 px-6 text-right">STATUS</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let item of filteredDistanceTariffs()" class="hover:bg-slate-800/40 transition">
+            <td class="py-4 px-6 font-bold text-slate-100">{{ item.category }}</td>
+            <td class="py-4 px-6 font-mono text-slate-300">{{ item.minDistanceKm }} km ➔ {{ item.maxDistanceKm }} km</td>
+            <td class="py-4 px-6 font-bold text-[#00e699] font-mono text-base">{{ item.baseFareEtb | currency:'ETB ' }}</td>
+            <td class="py-4 px-6 font-mono text-slate-300">{{ item.perKmRateEtb | currency:'ETB ' }} / km</td>
+            <td class="py-4 px-6 font-mono text-xs text-slate-400">{{ item.effectiveDate }}</td>
+            <td class="py-4 px-6 text-right">
+              <span class="px-3 py-1 bg-emerald-950/90 border border-emerald-800 text-[#00e699] text-xs font-bold rounded-full">
+                Active Legal Rate
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Approved Route Stage Tariffs Table -->
+  <div *ngIf="activeTab() === 'stage'" class="space-y-4">
+    <!-- Search Bar for Stages -->
+    <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-3 shadow-md">
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search Stage Tariffs by Route Code, Terminal Name, or Intermediate Stages..." 
+        class="w-full bg-[#0b101d] border border-slate-700/70 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none placeholder:text-slate-500" />
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-300">
+          <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-4 px-6">ROUTE CODE</th>
+              <th class="py-4 px-6">ROUTE NAME</th>
+              <th class="py-4 px-6">CATEGORY</th>
+              <th class="py-4 px-6">STAGES (START ➔ END)</th>
+              <th class="py-4 px-6">REGULATED FARE</th>
+              <th class="py-4 px-6 text-right">LAST UPDATED</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            <tr *ngFor="let stage of filteredStageTariffs()" class="hover:bg-slate-800/40 transition">
+              <td class="py-4 px-6 font-mono font-bold text-[#00e699]">{{ stage.routeCode }}</td>
+              <td class="py-4 px-6 font-bold text-slate-100">{{ stage.routeName }}</td>
+              <td class="py-4 px-6 text-slate-300 text-xs">{{ stage.category }}</td>
+              <td class="py-4 px-6 text-xs text-slate-400">
+                <span class="text-slate-200 font-semibold">{{ stage.startStage }}</span>
+                <span class="mx-1 text-slate-500">➔</span>
+                <span class="text-slate-200 font-semibold">{{ stage.endStage }}</span>
+              </td>
+              <td class="py-4 px-6 font-bold font-mono text-emerald-400 text-base">
+                {{ stage.approvedTariffEtb | currency:'ETB ' }}
+              </td>
+              <td class="py-4 px-6 font-mono text-xs text-slate-400 text-right">{{ stage.lastUpdated }}</td>
+            </tr>
+
+            <tr *ngIf="filteredStageTariffs().length === 0">
+              <td colspan="6" class="py-8 text-center text-slate-500 text-sm">
+                No route stage tariffs match your search criteria.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply Tariff Adjustment Modal -->
+  <div *ngIf="isAdjustmentModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h2 class="text-xl font-bold text-[#00e699] mb-4 flex items-center gap-2">
+        <span>⚖️</span> Transport Bureau Tariff Adjustment
+      </h2>
+
+      <form (ngSubmit)="submitAdjustment()" #adjForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Target Category</label>
+          <select 
+            [(ngModel)]="adjustmentForm.category" 
+            name="category" 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none">
+            <option value="Minibus Taxi">Minibus Taxi</option>
+            <option value="Anbessa Bus">Anbessa Bus</option>
+            <option value="Sheger Bus">Sheger Bus</option>
+            <option value="Velocity Bus">Velocity Bus</option>
+            <option value="Midi-Bus">Midi-Bus</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Percentage Change (%)</label>
+            <input 
+              type="number" 
+              step="0.5"
+              [(ngModel)]="adjustmentForm.percentageChange" 
+              name="percentageChange" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+            <span class="text-[10px] text-slate-500 mt-1 block">Positive = Rate Increase, Negative = Reduction</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Adjustment Reason</label>
+            <select 
+              [(ngModel)]="adjustmentForm.reason" 
+              name="reason" 
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none">
+              <option *ngFor="let reason of adjustmentReasons" [value]="reason">{{ reason }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Effective Date</label>
+          <input 
+            type="date" 
+            [(ngModel)]="adjustmentForm.effectiveDate" 
+            name="effectiveDate" 
+            required
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Official Executive Notes</label>
+          <textarea 
+            [(ngModel)]="adjustmentForm.notes" 
+            name="notes" 
+            rows="3"
+            placeholder="Specify bureau decree number, fuel benchmark price, or executive justification..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-3 text-slate-200 text-sm focus:border-[#00e699] focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeAdjustmentModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-sm font-semibold transition">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!adjForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 rounded-lg text-slate-950 font-bold text-sm transition">
+            Apply Official Revision
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
