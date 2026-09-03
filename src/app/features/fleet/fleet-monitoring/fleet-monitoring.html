@@ -1,0 +1,312 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Fleet & Terminal Live Telemetry
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Real-Time Transit Queue Metrics, Corridor Congestion & Targeted Driver Reinforcement Dispatch
+      </p>
+    </div>
+    <button 
+      (click)="openReinforcementModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2 text-sm">
+      <span>⚡ Dispatch Driver Reinforcement</span>
+    </button>
+  </header>
+
+  <!-- Metric Overview Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL VEHICLES ON ROAD
+      </div>
+      <div class="text-3xl font-extrabold text-[#00e699] font-mono">
+        {{ totalActiveVehiclesOnRoad() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Active telemetry units transmitting</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        QUEUED PASSENGERS AT TERMINALS
+      </div>
+      <div class="text-3xl font-extrabold text-amber-400 font-mono">
+        {{ totalPassengersWaiting() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Estimated queue across all hubs</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        ACTIVE ACCEPTED REINFORCEMENTS
+      </div>
+      <div class="text-3xl font-extrabold text-emerald-400 font-mono">
+        {{ activeAcceptedReinforcements() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Drivers en-route to overcrowded hubs</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TELEMETRY SIGNAL STATUS
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-[#00e699]"></span>
+        </span>
+        <span class="text-emerald-400 font-bold text-sm">Operational (100%)</span>
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Addis Ababa Smart Transit Network</div>
+    </div>
+  </div>
+
+  <!-- Terminal Live Status Cards -->
+  <h2 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
+    <span>🏬</span> Terminal Queues & Wait Time Status
+  </h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div *ngFor="let term of terminals()" class="bg-[#131b2e] border border-slate-800/80 rounded-xl p-4 shadow-md flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-slate-100 text-sm truncate">{{ term.terminalName }}</h3>
+          <span [ngClass]="{
+            'bg-emerald-950/80 text-[#00e699] border-emerald-800': term.status === 'Optimal',
+            'bg-amber-950/80 text-amber-400 border-amber-800': term.status === 'High Demand',
+            'bg-rose-950/80 text-rose-400 border-rose-800': term.status === 'Overcrowded'
+          }" class="px-2 py-0.5 border text-[10px] font-bold rounded-full whitespace-nowrap">
+            {{ term.status }}
+          </span>
+        </div>
+
+        <div class="space-y-1 text-xs text-slate-400 my-3">
+          <div class="flex justify-between">
+            <span>Vehicles in Queue:</span>
+            <span class="font-mono font-bold text-slate-200">{{ term.activeVehiclesInQueue }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Waiting Passengers:</span>
+            <span class="font-mono font-bold text-amber-400">{{ term.waitingPassengersCount }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Avg Wait Time:</span>
+            <span class="font-mono font-bold text-slate-200">{{ term.avgWaitTimeMinutes }} mins</span>
+          </div>
+        </div>
+      </div>
+
+      <button 
+        (click)="openReinforcementModal(term.terminalName)"
+        class="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-[#00e699] text-xs font-semibold py-1.5 rounded transition border border-slate-700">
+        Dispatch Driver Here
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Reinforcement Driver Acceptance / Rejection Ledger -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl mb-8">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>📲</span> Real-Time Reinforcement Dispatch Tracking (Driver App Feedback)
+      </h2>
+      <span class="text-xs text-slate-400">Live Driver Acceptances & Rejections</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3 px-6">DISPATCH ID</th>
+            <th class="py-3 px-6">TARGET TERMINAL</th>
+            <th class="py-3 px-6">DRIVER & VEHICLE</th>
+            <th class="py-3 px-6">DISPATCH TIME</th>
+            <th class="py-3 px-6">DRIVER RESPONSE STATUS</th>
+            <th class="py-3 px-6">REASON / NOTES</th>
+            <th class="py-3 px-6 text-right">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let disp of reinforcementDispatches()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-6 font-mono font-bold text-[#00e699]">{{ disp.id }}</td>
+            <td class="py-3.5 px-6 text-slate-100 font-semibold">{{ disp.terminalName }} ({{ disp.routeCode }})</td>
+            <td class="py-3.5 px-6">
+              <div class="font-bold text-slate-200">{{ disp.driverName }}</div>
+              <div class="text-xs font-mono text-slate-400">{{ disp.vehiclePlate }} • {{ disp.category }}</div>
+            </td>
+            <td class="py-3.5 px-6 font-mono text-xs text-slate-400">
+              Sent: {{ disp.dispatchedAt }}
+              <div *ngIf="disp.respondedAt" class="text-[10px] text-slate-500">Resp: {{ disp.respondedAt }}</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <span [ngClass]="{
+                'bg-amber-950/80 text-amber-400 border-amber-800 animate-pulse': disp.status === 'Pending',
+                'bg-emerald-950/80 text-[#00e699] border-emerald-800': disp.status === 'Accepted' || disp.status === 'En Route',
+                'bg-rose-950/80 text-rose-400 border-rose-800': disp.status === 'Declined',
+                'bg-slate-800 text-slate-400 border-slate-700': disp.status === 'Cancelled'
+              }" class="px-2.5 py-1 border text-xs font-bold rounded-full inline-flex items-center gap-1.5">
+                <span *ngIf="disp.status === 'Pending'">⏳ Pending Driver...</span>
+                <span *ngIf="disp.status === 'Accepted'">✅ Accepted</span>
+                <span *ngIf="disp.status === 'Declined'">❌ Declined</span>
+                <span *ngIf="disp.status === 'Cancelled'">🚫 Cancelled</span>
+              </span>
+            </td>
+            <td class="py-3.5 px-6 text-xs text-slate-400">
+              <span *ngIf="disp.declineReason" class="text-rose-300 italic">{{ disp.declineReason }}</span>
+              <span *ngIf="!disp.declineReason && disp.status === 'Accepted'" class="text-emerald-300">En route to terminal loading bay.</span>
+              <span *ngIf="disp.status === 'Pending'" class="text-slate-500">Transmitted to driver mobile app...</span>
+            </td>
+            <td class="py-3.5 px-6 text-right">
+              <button 
+                *ngIf="disp.status === 'Pending'"
+                (click)="cancelDispatch(disp.id)"
+                class="bg-slate-800 hover:bg-rose-900/50 text-rose-400 border border-slate-700 text-xs px-2.5 py-1 rounded transition">
+                Cancel
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Corridor Congestion Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>🚦</span> Corridor Congestion & Route Telemetry
+      </h2>
+
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <input 
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Search route code or name..."
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none w-full md:w-48" />
+
+        <select 
+          [ngModel]="selectedCategoryFilter()"
+          (ngModelChange)="selectedCategoryFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+
+        <select 
+          [ngModel]="selectedCongestionFilter()"
+          (ngModelChange)="selectedCongestionFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option *ngFor="let cong of congestionLevels" [value]="cong">{{ cong }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">ROUTE CODE</th>
+            <th class="py-4 px-6">CORRIDOR NAME</th>
+            <th class="py-4 px-6">CATEGORY</th>
+            <th class="py-4 px-6">ACTIVE UNITS</th>
+            <th class="py-4 px-6">AVG SPEED</th>
+            <th class="py-4 px-6">CONGESTION LEVEL</th>
+            <th class="py-4 px-6 text-right">TELEMETRY AGE</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let item of filteredTelemetry()" class="hover:bg-slate-800/40 transition">
+            <td class="py-4 px-6 font-mono font-bold text-[#00e699]">{{ item.routeCode }}</td>
+            <td class="py-4 px-6 font-bold text-slate-100">{{ item.routeName }}</td>
+            <td class="py-4 px-6 text-slate-300 text-xs">{{ item.category }}</td>
+            <td class="py-4 px-6 font-mono text-slate-200 font-bold">{{ item.activeVehiclesOnRoute }} Units</td>
+            <td class="py-4 px-6 font-mono text-slate-300">{{ item.avgSpeedKmh }} km/h</td>
+            <td class="py-4 px-6">
+              <span [ngClass]="{
+                'bg-emerald-950/80 text-[#00e699] border-emerald-800': item.congestion === 'Normal',
+                'bg-amber-950/80 text-amber-400 border-amber-800': item.congestion === 'Moderate',
+                'bg-orange-950/80 text-orange-400 border-orange-800': item.congestion === 'Heavy',
+                'bg-rose-950/80 text-rose-400 border-rose-800': item.congestion === 'Critical'
+              }" class="px-2.5 py-1 border text-xs font-bold rounded-full">
+                {{ item.congestion }}
+              </span>
+            </td>
+            <td class="py-4 px-6 font-mono text-xs text-slate-400 text-right">{{ item.lastUpdated }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: Driver Targeted Reinforcement Dispatch -->
+  <div *ngIf="isReinforcementModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-md p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#00e699] mb-4 flex items-center gap-2">
+        <span>⚡</span> Targeted Driver Reinforcement Dispatch
+      </h3>
+
+      <form (ngSubmit)="submitReinforcementDispatch()" #refForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Target Terminal</label>
+          <select 
+            [(ngModel)]="reinforcementForm.terminalName" 
+            name="terminalName" 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+            <option *ngFor="let term of terminals()" [value]="term.terminalName">{{ term.terminalName }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Target Route</label>
+          <select 
+            [(ngModel)]="reinforcementForm.routeCode" 
+            name="routeCode" 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+            <option value="R-101">R-101: Bole ➔ Megenagna</option>
+            <option value="R-204">R-204: Piazza ➔ Kaliti</option>
+            <option value="R-305">R-305: CMC ➔ Tor Hailoch</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Select Nearby Available Driver</label>
+          <select 
+            [(ngModel)]="reinforcementForm.driverId" 
+            name="driverId" 
+            required
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+            <option *ngFor="let driver of availableDrivers()" [value]="driver.driverId" [disabled]="!driver.isAvailable">
+              {{ driver.driverName }} ({{ driver.vehiclePlate }}) - {{ driver.currentLocation }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Priority Instructions / Dispatch Note</label>
+          <textarea 
+            [(ngModel)]="reinforcementForm.priorityNote" 
+            name="priorityNote"
+            rows="2"
+            placeholder="E.g., High overcrowding reported at Piazza loading bay..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeReinforcementModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-xs font-semibold">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!refForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs">
+            Transmit Signal to Driver App
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
