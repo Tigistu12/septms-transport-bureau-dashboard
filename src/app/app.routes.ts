@@ -52,6 +52,11 @@ export const routes: Routes = [
       .then(m => m.PassengerQueue)
   },
   {
+    path: 'tracking',
+    loadComponent: () => import('./features/tracking/gps-tracking/gps-tracking')
+      .then(m => m.GpsTracking)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)
