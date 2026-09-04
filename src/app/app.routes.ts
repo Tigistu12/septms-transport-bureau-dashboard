@@ -82,6 +82,11 @@ export const routes: Routes = [
       .then(m => m.NotificationCenter)
   },
   {
+    path: 'users',
+    loadComponent: () => import('./features/users/user-management/user-management')
+      .then(m => m.UserManagement)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)
