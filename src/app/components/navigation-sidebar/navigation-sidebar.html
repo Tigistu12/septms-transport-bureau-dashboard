@@ -1,0 +1,102 @@
+<aside 
+  [class.w-72]="!isCollapsed()" 
+  [class.w-20]="isCollapsed()" 
+  class="h-screen bg-[#0b101d] border-r border-slate-800 text-slate-300 flex flex-col transition-all duration-300 select-none shadow-2xl relative z-50">
+
+  <!-- Brand Header -->
+  <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800 bg-[#0d1322]">
+    <div class="flex items-center gap-3 overflow-hidden">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00e699] to-emerald-700 flex items-center justify-center text-slate-950 font-black text-xl shrink-0 shadow-lg shadow-emerald-950">
+        🇪🇹
+      </div>
+      @if (!isCollapsed()) {
+        <div class="flex flex-col truncate">
+          <span class="font-extrabold text-slate-100 text-sm tracking-wide">AATB-SEPTMS</span>
+          <span class="text-[10px] text-[#00e699] font-bold uppercase tracking-wider">Transport Bureau</span>
+        </div>
+      }
+    </div>
+
+    <button 
+      (click)="toggleCollapse()"
+      class="text-slate-400 hover:text-[#00e699] p-1.5 rounded-lg hover:bg-slate-800/60 transition">
+      @if (isCollapsed()) {
+        <span>⏩</span>
+      } @else {
+        <span>⏪</span>
+      }
+    </button>
+  </div>
+
+  <!-- Navigation Menu Groups -->
+  <div class="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
+    @for (cat of categories; track cat.key) {
+      <div>
+        @if (!isCollapsed()) {
+          <div class="px-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+            {{ cat.label }}
+          </div>
+        }
+
+        <div class="space-y-1">
+          @for (item of getItemsByCategory(cat.key); track item.id) {
+            <button
+              (click)="navigate(item.route)"
+              [class.bg-[#00e699]/10]="navService.activeRoute() === item.route"
+              [class.text-[#00e699]]="navService.activeRoute() === item.route"
+              [class.border-r-4]="navService.activeRoute() === item.route"
+              [class.border-[#00e699]]="navService.activeRoute() === item.route"
+              [class.hover:bg-slate-800/50]="navService.activeRoute() !== item.route"
+              [class.text-slate-400]="navService.activeRoute() !== item.route"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-xs font-semibold text-left group">
+              
+              <span class="text-base shrink-0 group-hover:scale-110 transition-transform">{{ item.icon }}</span>
+
+              @if (!isCollapsed()) {
+                <span class="truncate flex-1">{{ item.label }}</span>
+
+                @if (item.badgeCount) {
+                  <span 
+                    [class.bg-rose-950]="item.badgeType === 'danger'"
+                    [class.text-rose-400]="item.badgeType === 'danger'"
+                    [class.border-rose-800]="item.badgeType === 'danger'"
+                    [class.bg-amber-950]="item.badgeType === 'warning'"
+                    [class.text-amber-400]="item.badgeType === 'warning'"
+                    [class.border-amber-800]="item.badgeType === 'warning'"
+                    [class.bg-sky-950]="item.badgeType === 'info'"
+                    [class.text-sky-400]="item.badgeType === 'info'"
+                    [class.border-sky-800]="item.badgeType === 'info'"
+                    class="px-2 py-0.5 border text-[10px] font-extrabold rounded-full">
+                    {{ item.badgeCount }}
+                  </span>
+                }
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- System Status Footer Widget -->
+  @if (!isCollapsed()) {
+    <div class="p-3 border-t border-slate-800 bg-[#0d1322] space-y-2">
+      <div class="flex items-center justify-between text-[11px]">
+        <span class="text-slate-400 font-medium">System Telematics</span>
+        <span class="text-[#00e699] font-bold flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-[#00e699] animate-pulse"></span> ONLINE
+        </span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-[10px]">
+        <div class="bg-[#0b101d] p-1.5 rounded border border-slate-800/80">
+          <div class="text-slate-500">Active Fleet</div>
+          <div class="text-slate-200 font-bold font-mono">{{ systemStatus().activeVehicles }}</div>
+        </div>
+        <div class="bg-[#0b101d] p-1.5 rounded border border-slate-800/80">
+          <div class="text-slate-500">Open Alerts</div>
+          <div class="text-rose-400 font-bold font-mono">{{ systemStatus().openViolations }}</div>
+        </div>
+      </div>
+    </div>
+  }
+</aside>

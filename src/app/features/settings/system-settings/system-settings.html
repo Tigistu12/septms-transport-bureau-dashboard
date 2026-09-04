@@ -18,9 +18,11 @@
         <span>⚙️</span> Global Transit Rules & Thresholds
       </h2>
 
-      <div *ngIf="saveSuccessMessage()" class="mb-4 p-3 bg-emerald-950/80 border border-emerald-800 text-[#00e699] text-xs font-bold rounded-lg flex items-center gap-2">
-        <span>✅</span> System configuration saved successfully!
-      </div>
+      @if (saveSuccessMessage()) {
+        <div class="mb-4 p-3 bg-emerald-950/80 border border-emerald-800 text-[#00e699] text-xs font-bold rounded-lg flex items-center gap-2">
+          <span>✅</span> System configuration saved successfully!
+        </div>
+      }
 
       <form (ngSubmit)="saveSettings()" class="space-y-4">
         <div>
@@ -29,7 +31,7 @@
           </label>
           <input 
             type="number" 
-            [(ngModel)]="config().telematicsRefreshIntervalSeconds" 
+            [(ngModel)]="formData().telematicsRefreshIntervalSeconds" 
             name="telematicsRefreshIntervalSeconds"
             required 
             class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
@@ -41,7 +43,7 @@
           </label>
           <input 
             type="number" 
-            [(ngModel)]="config().autoDispatchReinforcementThreshold" 
+            [(ngModel)]="formData().autoDispatchReinforcementThreshold" 
             name="autoDispatchReinforcementThreshold"
             required 
             class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
@@ -54,7 +56,7 @@
           <input 
             type="number" 
             step="0.1"
-            [(ngModel)]="config().overchargePenaltyMultiplier" 
+            [(ngModel)]="formData().overchargePenaltyMultiplier" 
             name="overchargePenaltyMultiplier"
             required 
             class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
@@ -66,7 +68,7 @@
           </label>
           <input 
             type="number" 
-            [(ngModel)]="config().maxDriverShiftHours" 
+            [(ngModel)]="formData().maxDriverShiftHours" 
             name="maxDriverShiftHours"
             required 
             class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
@@ -78,7 +80,7 @@
           </label>
           <input 
             type="number" 
-            [(ngModel)]="config().enforcementGracePeriodMinutes" 
+            [(ngModel)]="formData().enforcementGracePeriodMinutes" 
             name="enforcementGracePeriodMinutes"
             required 
             class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
@@ -88,7 +90,7 @@
           <label class="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
-              [(ngModel)]="config().enableTelebirrAutoSettlement" 
+              [(ngModel)]="formData().enableTelebirrAutoSettlement" 
               name="enableTelebirrAutoSettlement"
               class="accent-[#00e699] rounded" />
             <span class="text-xs text-slate-300 font-semibold">Enable Telebirr Automated Merchant Settlement</span>
@@ -97,7 +99,7 @@
           <label class="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
-              [(ngModel)]="config().enableCbeBirrAutoSettlement" 
+              [(ngModel)]="formData().enableCbeBirrAutoSettlement" 
               name="enableCbeBirrAutoSettlement"
               class="accent-[#00e699] rounded" />
             <span class="text-xs text-slate-300 font-semibold">Enable CBE Birr Automated Settlement</span>
@@ -131,7 +133,9 @@
             [ngModel]="selectedActionFilter()"
             (ngModelChange)="selectedActionFilter.set($event)"
             class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
-            <option *ngFor="let act of actionTypes" [value]="act">{{ act }}</option>
+            @for (act of actionTypes; track act) {
+              <option [value]="act">{{ act }}</option>
+            }
           </select>
         </div>
       </div>
@@ -149,23 +153,31 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/60">
-            <tr *ngFor="let log of filteredAuditLogs()" class="hover:bg-slate-800/40 transition">
-              <td class="py-3 px-4 font-mono font-bold text-[#00e699] text-xs">{{ log.id }}</td>
-              <td class="py-3 px-4 font-mono text-slate-400 text-xs">{{ log.timestamp }}</td>
-              <td class="py-3 px-4 font-bold text-slate-200 text-xs">{{ log.adminUser }}</td>
-              <td class="py-3 px-4">
-                <span [ngClass]="{
-                  'bg-emerald-950/80 text-[#00e699] border-emerald-800': log.actionType === 'REINFORCEMENT_DISPATCH',
-                  'bg-sky-950/80 text-sky-400 border-sky-800': log.actionType === 'TARIFF_UPDATE',
-                  'bg-rose-950/80 text-rose-400 border-rose-800': log.actionType === 'DRIVER_SUSPENSION' || log.actionType === 'PENALTY_ISSUED',
-                  'bg-slate-800 text-slate-300 border-slate-700': log.actionType === 'SYSTEM_CONFIG_CHANGE'
-                }" class="px-2 py-0.5 border text-[10px] font-bold rounded-full">
-                  {{ log.actionType }}
-                </span>
-              </td>
-              <td class="py-3 px-4 text-xs text-slate-300">{{ log.description }}</td>
-              <td class="py-3 px-4 font-mono text-xs text-slate-500 text-right">{{ log.ipAddress }}</td>
-            </tr>
+            @for (log of filteredAuditLogs(); track log.id) {
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-3 px-4 font-mono font-bold text-[#00e699] text-xs">{{ log.id }}</td>
+                <td class="py-3 px-4 font-mono text-slate-400 text-xs">{{ log.timestamp }}</td>
+                <td class="py-3 px-4 font-bold text-slate-200 text-xs">{{ log.adminUser }}</td>
+                <td class="py-3 px-4">
+                  <span [ngClass]="{
+                    'bg-emerald-950/80 text-[#00e699] border-emerald-800': log.actionType === 'REINFORCEMENT_DISPATCH',
+                    'bg-sky-950/80 text-sky-400 border-sky-800': log.actionType === 'TARIFF_UPDATE',
+                    'bg-rose-950/80 text-rose-400 border-rose-800': log.actionType === 'DRIVER_SUSPENSION' || log.actionType === 'PENALTY_ISSUED',
+                    'bg-slate-800 text-slate-300 border-slate-700': log.actionType === 'SYSTEM_CONFIG_CHANGE'
+                  }" class="px-2 py-0.5 border text-[10px] font-bold rounded-full">
+                    {{ log.actionType }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-300">{{ log.description }}</td>
+                <td class="py-3 px-4 font-mono text-xs text-slate-500 text-right">{{ log.ipAddress }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="py-8 text-center text-xs text-slate-500">
+                  No audit log entries found matching criteria.
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>

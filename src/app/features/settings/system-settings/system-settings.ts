@@ -1,8 +1,9 @@
+// system-settings.component.ts
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SystemSettingsService } from '../../../core/services/system-settings.service';
-import { SystemConfiguration, AuditActionType } from '../../../core/models/system-settings.model';
+import { SystemConfiguration } from '../../../core/models/system-settings.model';
 
 @Component({
   selector: 'app-system-settings',
@@ -14,7 +15,9 @@ import { SystemConfiguration, AuditActionType } from '../../../core/models/syste
 export class SystemSettings {
   private readonly settingsService = inject(SystemSettingsService);
 
-  readonly config = signal<SystemConfiguration>({ ...this.settingsService.config() });
+  // Local editable form state initialized from global service config
+  readonly formData = signal<SystemConfiguration>({ ...this.settingsService.config() });
+
   readonly selectedActionFilter = signal<string>('All Actions');
   readonly searchQuery = signal<string>('');
   readonly saveSuccessMessage = signal<boolean>(false);
@@ -45,7 +48,7 @@ export class SystemSettings {
   });
 
   saveSettings(): void {
-    this.settingsService.updateConfiguration(this.config());
+    this.settingsService.updateConfiguration(this.formData());
     this.saveSuccessMessage.set(true);
     setTimeout(() => this.saveSuccessMessage.set(false), 3000);
   }
