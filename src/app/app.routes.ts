@@ -47,6 +47,11 @@ export const routes: Routes = [
       .then(m => m.FleetMonitoring)
   },
   {
+    path: 'queues',
+    loadComponent: () => import('./features/queues/passenger-queue/passenger-queue')
+      .then(m => m.PassengerQueue)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)
