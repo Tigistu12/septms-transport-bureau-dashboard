@@ -1,0 +1,117 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        System Analytics & Executive Regulatory Reports
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        City-wide Transport Throughput, Tariff Enforcement Compliance & Revenue Metrics
+      </p>
+    </div>
+    <button 
+      (click)="exportReport()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2 text-sm">
+      <span>📊 Export Compliance Report</span>
+    </button>
+  </header>
+
+  <!-- Key Aggregate Performance Indicators -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        AGGREGATE REVENUE COLLECTED
+      </div>
+      <div class="text-3xl font-extrabold text-[#00e699] font-mono">
+        {{ aggregateRevenue() | number:'1.2-2' }} ETB
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Processed across Telebirr & CBE digital fare channels</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL PASSENGERS SERVED
+      </div>
+      <div class="text-3xl font-extrabold text-sky-400 font-mono">
+        {{ aggregatePassengers() | number:'1.0-0' }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Commuter volume recorded during monitoring period</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TARIFF COMPLIANCE RATE
+      </div>
+      <div class="text-3xl font-extrabold text-emerald-400 font-mono">
+        {{ averageComplianceRate() }}%
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Adherence to official Ministry of Transport tariff rates</div>
+    </div>
+  </div>
+
+  <!-- Zone-based Analytics Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl mb-8">
+    <div class="p-4 border-b border-slate-800">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>📍</span> Transit Zone Efficiency & Compliance Breakdown
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3.5 px-6">ZONE / CORRIDOR</th>
+            <th class="py-3.5 px-6">ACTIVE FLEET</th>
+            <th class="py-3.5 px-6">PASSENGER VOLUME</th>
+            <th class="py-3.5 px-6">TARIFF COMPLIANCE</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let zone of zoneMetrics()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-6 font-bold text-slate-100">{{ zone.zoneName }}</td>
+            <td class="py-3.5 px-6 font-mono text-slate-300">{{ zone.activeVehicles }} Units</td>
+            <td class="py-3.5 px-6 font-mono text-sky-400">{{ zone.passengerVolume | number }} Passengers</td>
+            <td class="py-3.5 px-6 font-mono font-bold text-emerald-400">
+              {{ zone.complianceRatePercentage }}%
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Throughput Ledger -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="p-4 border-b border-slate-800">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>📈</span> Daily Operational Summary
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3.5 px-6">DATE</th>
+            <th class="py-3.5 px-6">COMPLETED TRIPS</th>
+            <th class="py-3.5 px-6">PASSENGERS</th>
+            <th class="py-3.5 px-6">TOTAL FARE REVENUE</th>
+            <th class="py-3.5 px-6">VIOLATIONS</th>
+            <th class="py-3.5 px-6">AVG QUEUE WAIT</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let m of dailyMetrics()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-6 font-mono font-bold text-[#00e699]">{{ m.date }}</td>
+            <td class="py-3.5 px-6 font-mono">{{ m.totalTrips | number }}</td>
+            <td class="py-3.5 px-6 font-mono text-slate-200">{{ m.totalPassengers | number }}</td>
+            <td class="py-3.5 px-6 font-mono text-emerald-400 font-bold">{{ m.totalRevenueEtb | number:'1.2-2' }} ETB</td>
+            <td class="py-3.5 px-6 font-mono text-amber-400 font-bold">{{ m.tariffViolationsCount }} Incidents</td>
+            <td class="py-3.5 px-6 font-mono text-sky-400">{{ m.queueWaitTimeMinutes }} Mins</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
