@@ -57,6 +57,11 @@ export const routes: Routes = [
       .then(m => m.GpsTracking)
   },
   {
+    path: 'tickets',
+    loadComponent: () => import('./features/tickets/passenger-ticket/passenger-ticket')
+      .then(m => m.PassengerTicket)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)
