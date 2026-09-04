@@ -87,6 +87,11 @@ export const routes: Routes = [
       .then(m => m.UserManagement)
   },
   {
+    path: 'audit',
+    loadComponent: () => import('./features/audit/audit-log/audit-log')
+      .then(m => m.AuditLog)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)

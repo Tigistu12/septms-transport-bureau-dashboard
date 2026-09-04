@@ -1,0 +1,216 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Bureau Governance & Compliance Audit Trail
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Immutable Audit Logs, Regulatory Action Histories & Infrastructure Access Telemetry
+      </p>
+    </div>
+    <button 
+      (click)="openManualEntryModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2 text-sm">
+      <span>📝 Log Manual Compliance Audit</span>
+    </button>
+  </header>
+
+  <!-- Metrics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL RECORDED AUDIT EVENTS
+      </div>
+      <div class="text-3xl font-extrabold text-[#00e699] font-mono">
+        {{ auditLogs().length }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Verified cryptographically signed event records</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        HIGH & CRITICAL GOVERNANCE EVENTS
+      </div>
+      <div class="text-3xl font-extrabold text-rose-400 font-mono">
+        {{ criticalAuditCount() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Tariff updates, penalties & security escalations</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        AUDIT LEDGER INTEGRITY
+      </div>
+      <div class="text-3xl font-extrabold text-emerald-400 font-mono flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span> TAMPER-PROOF
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Append-only compliance log store active</div>
+    </div>
+  </div>
+
+  <!-- Audit Log Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>📜</span> Bureau Action Audit Stream
+      </h2>
+
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Search ID, officer, description..." 
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none w-full md:w-56" />
+
+        <select 
+          [ngModel]="selectedCategoryFilter()"
+          (ngModelChange)="selectedCategoryFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option value="ALL">All Categories</option>
+          <option value="TARIFF_CHANGE">TARIFF_CHANGE</option>
+          <option value="DRIVER_PENALTY">DRIVER_PENALTY</option>
+          <option value="USER_ACCESS">USER_ACCESS</option>
+          <option value="SYSTEM_DISPATCH">SYSTEM_DISPATCH</option>
+          <option value="PAYMENT_RECONCILIATION">PAYMENT_RECONCILIATION</option>
+        </select>
+
+        <select 
+          [ngModel]="selectedSeverityFilter()"
+          (ngModelChange)="selectedSeverityFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option value="ALL">All Severities</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="HIGH">HIGH</option>
+          <option value="MEDIUM">MEDIUM</option>
+          <option value="LOW">LOW</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3.5 px-6">AUDIT ID & TIME</th>
+            <th class="py-3.5 px-6">PERFORMED BY</th>
+            <th class="py-3.5 px-6">ACTION CATEGORY</th>
+            <th class="py-3.5 px-6">ACTION DETAILS & TARGET</th>
+            <th class="py-3.5 px-6">IP ADDRESS</th>
+            <th class="py-3.5 px-6 text-right">SEVERITY</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let log of filteredLogs()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-6">
+              <div class="font-mono font-bold text-[#00e699] text-xs">{{ log.auditId }}</div>
+              <div class="text-[11px] text-slate-400 font-mono mt-0.5">{{ log.timestamp }}</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <div class="font-bold text-slate-200 text-xs">{{ log.performedBy }}</div>
+              <div class="text-[10px] text-slate-400 font-mono">{{ log.userRole }}</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <span class="px-2.5 py-0.5 border border-slate-700 bg-slate-800 text-slate-200 text-[10px] font-bold rounded-full uppercase">
+                {{ log.actionCategory }}
+              </span>
+            </td>
+            <td class="py-3.5 px-6 max-w-xs">
+              <div class="text-xs text-slate-200 leading-snug">{{ log.actionDescription }}</div>
+              <div class="text-[10px] text-slate-500 font-mono mt-1">Target ID: {{ log.targetEntityId }}</div>
+            </td>
+            <td class="py-3.5 px-6 font-mono text-xs text-slate-400">{{ log.ipAddress }}</td>
+            <td class="py-3.5 px-6 text-right">
+              <span [ngClass]="{
+                'bg-rose-950/80 text-rose-400 border-rose-800': log.severity === 'CRITICAL',
+                'bg-amber-950/80 text-amber-400 border-amber-800': log.severity === 'HIGH',
+                'bg-sky-950/80 text-sky-400 border-sky-800': log.severity === 'MEDIUM',
+                'bg-slate-800 text-slate-300 border-slate-700': log.severity === 'LOW'
+              }" class="px-2 py-0.5 border text-[10px] font-bold rounded-full uppercase font-mono inline-block">
+                {{ log.severity }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: Log Manual Audit -->
+  <div *ngIf="isManualEntryModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#00e699] mb-4 flex items-center gap-2">
+        <span>📝</span> Log Compliance Audit Event
+      </h3>
+
+      <form (ngSubmit)="submitManualAudit()" #aForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Target Entity / Resource ID</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newManualEntry.targetEntityId" 
+            name="targetEntityId" 
+            required
+            placeholder="e.g. TAR-ZONE-5 or DRV-9901"
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Action Category</label>
+            <select 
+              [(ngModel)]="newManualEntry.actionCategory" 
+              name="actionCategory"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+              <option value="TARIFF_CHANGE">TARIFF_CHANGE</option>
+              <option value="DRIVER_PENALTY">DRIVER_PENALTY</option>
+              <option value="USER_ACCESS">USER_ACCESS</option>
+              <option value="SYSTEM_DISPATCH">SYSTEM_DISPATCH</option>
+              <option value="PAYMENT_RECONCILIATION">PAYMENT_RECONCILIATION</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Severity Level</label>
+            <select 
+              [(ngModel)]="newManualEntry.severity" 
+              name="severity"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Action Description & Governance Notes</label>
+          <textarea 
+            [(ngModel)]="newManualEntry.actionDescription" 
+            name="actionDescription" 
+            rows="3"
+            required
+            placeholder="Detail regulatory justification..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeManualEntryModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-xs font-semibold">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!aForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs">
+            Commit to Audit Ledger
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
