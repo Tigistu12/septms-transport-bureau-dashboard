@@ -1,0 +1,276 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Passenger Overcharge & Dispute Claims
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Enforce Tariff Compliance, Manage Overcharge Complaints & Issue Passenger Refunds
+      </p>
+    </div>
+    <button 
+      (click)="openDisputeModal()"
+      class="mt-4 md:mt-0 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2 text-sm">
+      <span>⚖️ Report Tariff Violation</span>
+    </button>
+  </header>
+
+  <!-- Key Metrics -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        PENDING DISPUTE CLAIMS
+      </div>
+      <div class="text-3xl font-extrabold text-amber-400 font-mono">
+        {{ pendingDisputesCount() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Awaiting officer assignment and review</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL CLAIMED OVERCHARGE EXCESS
+      </div>
+      <div class="text-3xl font-extrabold text-rose-400 font-mono">
+        {{ totalOverchargeAmount() | number:'1.2-2' }} ETB
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Illegal tariff surcharges reported</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL RECORDED COMPLAINTS
+      </div>
+      <div class="text-3xl font-extrabold text-[#00e699] font-mono">
+        {{ disputes().length }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Logged in bureau compliance ledger</div>
+    </div>
+  </div>
+
+  <!-- Disputes Table -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>📋</span> Overcharge & Misconduct Dispute Register
+      </h2>
+
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Search plate, phone, name..." 
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none w-full md:w-56" />
+
+        <select 
+          [ngModel]="selectedStatusFilter()"
+          (ngModelChange)="selectedStatusFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option *ngFor="let opt of statusOptions" [value]="opt">{{ opt }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-300">
+        <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+          <tr>
+            <th class="py-3.5 px-6">CLAIM ID</th>
+            <th class="py-3.5 px-6">PASSENGER DETAILS</th>
+            <th class="py-3.5 px-6">VEHICLE & DRIVER</th>
+            <th class="py-3.5 px-6">OFFICIAL VS CHARGED FARE</th>
+            <th class="py-3.5 px-6">DISPUTE TYPE</th>
+            <th class="py-3.5 px-6">STATUS</th>
+            <th class="py-3.5 px-6 text-right">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr *ngFor="let d of filteredDisputes()" class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-6 font-mono font-bold text-[#00e699]">{{ d.disputeId }}</td>
+            <td class="py-3.5 px-6">
+              <div class="font-bold text-slate-100">{{ d.passengerName }}</div>
+              <div class="text-xs text-slate-400 font-mono">{{ d.passengerPhone }}</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <div class="font-mono font-bold text-slate-200 text-xs">{{ d.vehiclePlate }}</div>
+              <div class="text-[11px] text-slate-400">{{ d.driverLicenseNumber }} ({{ d.category }})</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <div class="text-xs text-slate-400">Official: <span class="text-slate-200 font-mono">{{ d.officialFareEtb | number:'1.2-2' }} ETB</span></div>
+              <div class="text-xs text-rose-400">Charged: <span class="font-bold font-mono">{{ d.chargedFareEtb | number:'1.2-2' }} ETB</span></div>
+              <div class="text-[10px] text-amber-400 font-bold mt-0.5">Excess: +{{ d.excessAmountEtb | number:'1.2-2' }} ETB</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <span class="px-2 py-0.5 border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold rounded-full">
+                {{ d.disputeType }}
+              </span>
+              <div class="text-[11px] text-slate-400 mt-1">{{ d.incidentLocation }}</div>
+            </td>
+            <td class="py-3.5 px-6">
+              <span [ngClass]="{
+                'bg-amber-950/80 text-amber-400 border-amber-800 animate-pulse': d.status === 'PENDING',
+                'bg-sky-950/80 text-sky-400 border-sky-800': d.status === 'UNDER_INVESTIGATION',
+                'bg-emerald-950/80 text-[#00e699] border-emerald-800': d.status === 'RESOLVED_REFUNDED',
+                'bg-rose-950/80 text-rose-400 border-rose-800': d.status === 'REJECTED'
+              }" class="px-2.5 py-1 border text-[11px] font-bold rounded-full inline-block">
+                {{ d.status }}
+              </span>
+              <div *ngIf="d.assignedInspector" class="text-[10px] text-slate-400 mt-1">By: {{ d.assignedInspector }}</div>
+            </td>
+            <td class="py-3.5 px-6 text-right space-x-2">
+              <button 
+                *ngIf="d.status === 'PENDING'"
+                (click)="investigate(d.disputeId)"
+                class="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 text-xs px-2.5 py-1 rounded transition">
+                Investigate
+              </button>
+              <button 
+                *ngIf="d.status === 'UNDER_INVESTIGATION' || d.status === 'PENDING'"
+                (click)="resolveRefund(d.disputeId)"
+                class="bg-emerald-950/80 hover:bg-emerald-900 text-[#00e699] border border-emerald-800 text-xs px-2.5 py-1 rounded transition">
+                Refund & Fine
+              </button>
+              <button 
+                *ngIf="d.status === 'PENDING'"
+                (click)="rejectDispute(d.disputeId)"
+                class="bg-rose-950/80 hover:bg-rose-900 text-rose-400 border border-rose-800 text-xs px-2.5 py-1 rounded transition">
+                Reject
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: File Overcharge Dispute -->
+  <div *ngIf="isDisputeModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#00e699] mb-4 flex items-center gap-2">
+        <span>⚖️</span> File Passenger Overcharge Dispute
+      </h3>
+
+      <form (ngSubmit)="submitDispute()" #dispForm="ngForm" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Passenger Name</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newDispute.passengerName" 
+              name="passengerName" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Passenger Phone</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newDispute.passengerPhone" 
+              name="passengerPhone" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Vehicle Plate No.</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newDispute.vehiclePlate" 
+              name="vehiclePlate" 
+              required
+              placeholder="e.g. 3-A89102-AA"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Driver License No.</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newDispute.driverLicenseNumber" 
+              name="driverLicenseNumber" 
+              required
+              placeholder="e.g. ETH-DRV-9012"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Official Tariff (ETB)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newDispute.officialFareEtb" 
+              name="officialFareEtb" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Charged Fare (ETB)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newDispute.chargedFareEtb" 
+              name="chargedFareEtb" 
+              required
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Incident Location</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newDispute.incidentLocation" 
+              name="incidentLocation" 
+              required
+              placeholder="e.g. Megenagna Terminal"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Dispute Category</label>
+            <select 
+              [(ngModel)]="newDispute.disputeType" 
+              name="disputeType"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+              <option value="OVERCHARGE">OVERCHARGE</option>
+              <option value="UNANNOUNCED_SURGE">UNANNOUNCED_SURGE</option>
+              <option value="REFUSAL_TO_BOARD">REFUSAL_TO_BOARD</option>
+              <option value="DRIVER_MISCONDUCT">DRIVER_MISCONDUCT</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Description / Remarks</label>
+          <textarea 
+            [(ngModel)]="newDispute.description" 
+            name="description" 
+            rows="2"
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeDisputeModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-xs font-semibold">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!dispForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs">
+            File Overcharge Report
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
