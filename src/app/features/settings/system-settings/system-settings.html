@@ -1,0 +1,174 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        System Settings & Audit Log
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Configure Global Transit Policies, Telematics Thresholds & View Administrative Action Logs
+      </p>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Configuration Form -->
+    <div class="lg:col-span-1 bg-[#131b2e] border border-slate-800 rounded-xl p-6 shadow-xl h-fit">
+      <h2 class="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+        <span>⚙️</span> Global Transit Rules & Thresholds
+      </h2>
+
+      <div *ngIf="saveSuccessMessage()" class="mb-4 p-3 bg-emerald-950/80 border border-emerald-800 text-[#00e699] text-xs font-bold rounded-lg flex items-center gap-2">
+        <span>✅</span> System configuration saved successfully!
+      </div>
+
+      <form (ngSubmit)="saveSettings()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+            Telematics Ping Interval (Seconds)
+          </label>
+          <input 
+            type="number" 
+            [(ngModel)]="config().telematicsRefreshIntervalSeconds" 
+            name="telematicsRefreshIntervalSeconds"
+            required 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+            Overcrowded Queue Alert Threshold (Passengers)
+          </label>
+          <input 
+            type="number" 
+            [(ngModel)]="config().autoDispatchReinforcementThreshold" 
+            name="autoDispatchReinforcementThreshold"
+            required 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+            Illegal Surge Penalty Multiplier
+          </label>
+          <input 
+            type="number" 
+            step="0.1"
+            [(ngModel)]="config().overchargePenaltyMultiplier" 
+            name="overchargePenaltyMultiplier"
+            required 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+            Max Shift Limit Per Driver (Hours)
+          </label>
+          <input 
+            type="number" 
+            [(ngModel)]="config().maxDriverShiftHours" 
+            name="maxDriverShiftHours"
+            required 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+            Enforcement Grace Period (Minutes)
+          </label>
+          <input 
+            type="number" 
+            [(ngModel)]="config().enforcementGracePeriodMinutes" 
+            name="enforcementGracePeriodMinutes"
+            required 
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none font-mono" />
+        </div>
+
+        <div class="pt-2 space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="config().enableTelebirrAutoSettlement" 
+              name="enableTelebirrAutoSettlement"
+              class="accent-[#00e699] rounded" />
+            <span class="text-xs text-slate-300 font-semibold">Enable Telebirr Automated Merchant Settlement</span>
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="config().enableCbeBirrAutoSettlement" 
+              name="enableCbeBirrAutoSettlement"
+              class="accent-[#00e699] rounded" />
+            <span class="text-xs text-slate-300 font-semibold">Enable CBE Birr Automated Settlement</span>
+          </label>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full mt-4 bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold py-2.5 rounded-lg transition text-xs shadow-lg">
+          Update Global System Rules
+        </button>
+      </form>
+    </div>
+
+    <!-- Immutable System Audit Log -->
+    <div class="lg:col-span-2 bg-[#131b2e] border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+          <span>📜</span> System-Wide Administrative Audit Trail
+        </h2>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <input 
+            type="text" 
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            placeholder="Search audit trail..." 
+            class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none w-full sm:w-40" />
+
+          <select 
+            [ngModel]="selectedActionFilter()"
+            (ngModelChange)="selectedActionFilter.set($event)"
+            class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+            <option *ngFor="let act of actionTypes" [value]="act">{{ act }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-300">
+          <thead class="bg-[#0b101d] text-slate-400 uppercase text-[11px] font-bold tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-4">LOG ID</th>
+              <th class="py-3 px-4">TIMESTAMP</th>
+              <th class="py-3 px-4">ADMIN USER</th>
+              <th class="py-3 px-4">ACTION TYPE</th>
+              <th class="py-3 px-4">DESCRIPTION</th>
+              <th class="py-3 px-4 text-right">IP ADDRESS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            <tr *ngFor="let log of filteredAuditLogs()" class="hover:bg-slate-800/40 transition">
+              <td class="py-3 px-4 font-mono font-bold text-[#00e699] text-xs">{{ log.id }}</td>
+              <td class="py-3 px-4 font-mono text-slate-400 text-xs">{{ log.timestamp }}</td>
+              <td class="py-3 px-4 font-bold text-slate-200 text-xs">{{ log.adminUser }}</td>
+              <td class="py-3 px-4">
+                <span [ngClass]="{
+                  'bg-emerald-950/80 text-[#00e699] border-emerald-800': log.actionType === 'REINFORCEMENT_DISPATCH',
+                  'bg-sky-950/80 text-sky-400 border-sky-800': log.actionType === 'TARIFF_UPDATE',
+                  'bg-rose-950/80 text-rose-400 border-rose-800': log.actionType === 'DRIVER_SUSPENSION' || log.actionType === 'PENALTY_ISSUED',
+                  'bg-slate-800 text-slate-300 border-slate-700': log.actionType === 'SYSTEM_CONFIG_CHANGE'
+                }" class="px-2 py-0.5 border text-[10px] font-bold rounded-full">
+                  {{ log.actionType }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-xs text-slate-300">{{ log.description }}</td>
+              <td class="py-3 px-4 font-mono text-xs text-slate-500 text-right">{{ log.ipAddress }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
