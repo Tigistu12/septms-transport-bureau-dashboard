@@ -67,6 +67,11 @@ export const routes: Routes = [
       .then(m => m.PassengerDisputeComponent)
   },
   {
+    path: 'penalties',
+    loadComponent: () => import('./features/penalties/driver-penalty/driver-penalty')
+      .then(m => m.DriverPenaltyComponent)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)
