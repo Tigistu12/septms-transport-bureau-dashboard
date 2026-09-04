@@ -77,6 +77,11 @@ export const routes: Routes = [
       .then(m => m.SystemAnalyticsComponent)
   },
   {
+    path: 'notifications',
+    loadComponent: () => import('./features/notifications/notification-center/notification-center')
+      .then(m => m.NotificationCenter)
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/system-settings/system-settings')
       .then(m => m.SystemSettings)

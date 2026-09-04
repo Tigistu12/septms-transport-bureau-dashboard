@@ -1,0 +1,214 @@
+<div class="min-h-screen bg-[#0d1322] text-slate-100 p-8 font-sans">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#00e699] tracking-tight">
+        Real-Time Broadcast & Notification Center
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        City-wide System Alerts, Regulatory Infringement Signals & Bureau Broadcast Communications
+      </p>
+    </div>
+    <div class="mt-4 md:mt-0 flex gap-3">
+      <button 
+        (click)="clearAllNotifications()"
+        class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2.5 rounded-lg transition text-sm">
+        Clear All
+      </button>
+      <button 
+        (click)="openBroadcastModal()"
+        class="bg-[#00e699] hover:bg-[#00c885] text-slate-950 font-bold px-5 py-2.5 rounded-lg transition shadow-lg flex items-center gap-2 text-sm">
+        <span>📢 Send Bureau Broadcast</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- High-Level Metrics -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        UNREAD ALERTS
+      </div>
+      <div class="text-3xl font-extrabold text-amber-400 font-mono">
+        {{ unreadCount() }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Active pending operational notifications</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        TOTAL NOTIFICATIONS
+      </div>
+      <div class="text-3xl font-extrabold text-[#00e699] font-mono">
+        {{ notifications().length }}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Recorded dispatch alerts & broadcasts</div>
+    </div>
+
+    <div class="bg-[#131b2e] border border-slate-800 rounded-xl p-5 shadow-lg">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+        SYSTEM MONITORING STATUS
+      </div>
+      <div class="text-3xl font-extrabold text-emerald-400 font-mono flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Real-time signal feed connected</div>
+    </div>
+  </div>
+
+  <!-- Notification Stream Container -->
+  <div class="bg-[#131b2e] border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
+    <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+        <span>🔔</span> Active Notification Stream
+      </h2>
+
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Search alert title or body..." 
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none w-full md:w-56" />
+
+        <select 
+          [ngModel]="selectedSeverityFilter()"
+          (ngModelChange)="selectedSeverityFilter.set($event)"
+          class="bg-[#0b101d] border border-slate-700/70 rounded-lg px-3 py-1.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none cursor-pointer">
+          <option value="ALL">All Severities</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="WARNING">WARNING</option>
+          <option value="INFO">INFO</option>
+          <option value="SUCCESS">SUCCESS</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notification Cards List -->
+    <div class="divide-y divide-slate-800/60">
+      <div 
+        *ngFor="let n of filteredNotifications()" 
+        [ngClass]="{'bg-[#0f172a]/80': !n.isRead, 'bg-[#131b2e]': n.isRead}"
+        class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/30 transition">
+        
+        <div class="space-y-1 max-w-3xl">
+          <div class="flex items-center gap-2.5">
+            <span [ngClass]="{
+              'bg-rose-950/80 text-rose-400 border-rose-800': n.severity === 'CRITICAL',
+              'bg-amber-950/80 text-amber-400 border-amber-800': n.severity === 'WARNING',
+              'bg-sky-950/80 text-sky-400 border-sky-800': n.severity === 'INFO',
+              'bg-emerald-950/80 text-[#00e699] border-emerald-800': n.severity === 'SUCCESS'
+            }" class="px-2.5 py-0.5 border text-[10px] font-bold rounded-full uppercase font-mono">
+              {{ n.severity }}
+            </span>
+            
+            <h3 class="font-bold text-slate-100 text-sm">{{ n.title }}</h3>
+            
+            <span *ngIf="!n.isRead" class="bg-[#00e699] text-slate-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase">
+              NEW
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed">{{ n.message }}</p>
+
+          <div class="flex items-center gap-4 text-[10px] text-slate-500 font-mono pt-1">
+            <span>Target: {{ n.targetAudience }}</span>
+            <span>•</span>
+            <span>Issued By: {{ n.issuedBy }}</span>
+            <span>•</span>
+            <span>Time: {{ n.timestamp }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-end md:self-center">
+          <button 
+            *ngIf="!n.isRead"
+            (click)="markAsRead(n.id)"
+            class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-1.5 rounded transition font-medium">
+            Mark Read
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="filteredNotifications().length === 0" class="p-8 text-center text-slate-500 text-xs">
+        No notification stream signals match the selected filters.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Dispatch Broadcast -->
+  <div *ngIf="isBroadcastModalOpen()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-700/80 rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#00e699] mb-4 flex items-center gap-2">
+        <span>📢</span> Dispatch Official Bureau Broadcast
+      </h3>
+
+      <form (ngSubmit)="submitBroadcast()" #bForm="ngForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Broadcast Title</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newBroadcast.title" 
+            name="title" 
+            required
+            placeholder="e.g. Tariff Rate Update Notice"
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Severity Level</label>
+            <select 
+              [(ngModel)]="newBroadcast.severity" 
+              name="severity"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+              <option value="INFO">INFO</option>
+              <option value="WARNING">WARNING</option>
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="SUCCESS">SUCCESS</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Target Audience</label>
+            <select 
+              [(ngModel)]="newBroadcast.targetAudience" 
+              name="targetAudience"
+              class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none">
+              <option value="ALL_DRIVERS">ALL_DRIVERS</option>
+              <option value="INSPECTORS">INSPECTORS</option>
+              <option value="PASSENGERS">PASSENGERS</option>
+              <option value="ZONE_OFFICERS">ZONE_OFFICERS</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Broadcast Message Body</label>
+          <textarea 
+            [(ngModel)]="newBroadcast.message" 
+            name="message" 
+            rows="3"
+            required
+            placeholder="Enter announcement instructions..."
+            class="w-full bg-[#0b101d] border border-slate-700 rounded-lg p-2.5 text-slate-200 text-xs focus:border-[#00e699] focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            (click)="closeBroadcastModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-xs font-semibold">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="!bForm.form.valid"
+            class="px-4 py-2 bg-[#00e699] hover:bg-[#00c885] disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs">
+            Transmit Broadcast
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
